@@ -26,7 +26,7 @@ Statusline preview:
 - A fixed-rate timer re-renders while streaming, so the number decays naturally when the
   stream stalls instead of freezing on a stale value.
 - If a proxy buffers the whole response and emits it at once (first-to-last delta gap
-  shorter than `minElapsedMs`), the speed is meaningless and `--` is shown.
+  shorter than 300 ms), the speed is meaningless and `--` is shown.
 - Statistics are per assistant message, so tool-execution time is naturally excluded.
 - Does nothing outside the TUI (print / json / rpc modes).
 
@@ -35,29 +35,6 @@ Statusline preview:
 ```bash
 pi install /path/to/pi-token-speed
 ```
-
-## Configure (optional)
-
-Create `~/.pi/agent/pi-token-speed.json`. Every field is optional; invalid values fall
-back to the default. Settings are read on session start.
-
-```json
-{
-  "windowMs": 2000,
-  "renderIntervalMs": 250,
-  "minElapsedMs": 300,
-  "longWindowMs": 600000,
-  "ttftSamples": 5
-}
-```
-
-| Field | Default | Meaning |
-|---|---|---|
-| `windowMs` | `2000` | sliding window for the instantaneous speed |
-| `renderIntervalMs` | `250` | statusline re-render interval while streaming |
-| `minElapsedMs` | `300` | below this time since the first token, no speed is shown |
-| `longWindowMs` | `600000` | window for the aggregate speed of completed messages |
-| `ttftSamples` | `5` | number of recent requests averaged for TTFT |
 
 ## Development
 
