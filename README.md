@@ -14,7 +14,8 @@ Statusline preview:
 - `~42.3 tok/s` — instantaneous speed while streaming (sliding window, estimated from deltas);
   after the message ends it becomes the message average, using the provider's real
   `usage.output` when available (`~` is dropped when the count is exact)
-- `TTFT 820ms` — average time-to-first-token over the last 5 requests
+- `TTFT 820ms` — average time-to-first-token over the last 5 requests; shown as soon as
+  the first delta arrives and retained between messages, including while waiting for the next response
 - `38.1 tok/s` — aggregate speed of all messages completed in the last 10 minutes
   (generation time only; idle and tool-execution time are excluded)
 

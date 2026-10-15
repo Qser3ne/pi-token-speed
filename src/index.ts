@@ -6,7 +6,7 @@
  * - 流式阶段:根据 text / thinking / toolcall 的 delta 估算 token,
  *   用最近 WINDOW_MS 的滑动窗口计算瞬时速度(从首个 token 起算,不含首包延迟)。
  *   由定时器按固定频率渲染,所以流停顿时数值会自然衰减,而不是冻结在旧值上。
- * - TTFT 显示最近 TTFT_SAMPLES 次请求(首个 delta 延迟)的平均值。
+ * - TTFT 显示最近 TTFT_SAMPLES 次请求(首个 delta 延迟)的平均值,首次测得后持续显示。
  * - 消息结束:若 provider 返回了 usage.output,则用真实 token 数计算本条消息平均速度;
  *   若首尾 delta 间隔过短(代理整段缓冲后一次吐出),速度无意义,显示 "--"。
  * - 按单条 assistant 消息统计,天然不含工具执行时间。
@@ -110,7 +110,7 @@ export default function tokenSpeedExtension(pi: ExtensionAPI): void {
   const ttftSuffix = (ctx: ExtensionContext): string => {
     if (ttftHistory.length === 0) return "";
     const avg = ttftHistory.reduce((a, b) => a + b, 0) / ttftHistory.length;
-    return avg > 0 ? ctx.ui.theme.fg("dim", ` · TTFT ${fmtMs(avg)}`) : "";
+    return ctx.ui.theme.fg("dim", ` · TTFT ${fmtMs(avg)}`);
   };
 
   /** 长窗口内已完成消息的 tokens / 生成时长(不含空闲与工具时间);无记录返回空串。 */
@@ -150,7 +150,7 @@ export default function tokenSpeedExtension(pi: ExtensionAPI): void {
     active = true;
     ttftBase = pendingRequestAt || Date.now();
     pendingRequestAt = 0;
-    show(ctx, `⚡ --${longSuffix(ctx, Date.now())}`); // 等待首个 token,避免残留上一条的数值
+    show(ctx, `⚡ --${ttftSuffix(ctx)}${longSuffix(ctx, Date.now())}`); // 仅重置速度,保留已有 TTFT
     timer = setInterval(() => render(ctx), RENDER_INTERVAL_MS);
     timer.unref?.();
   });
@@ -174,6 +174,7 @@ export default function tokenSpeedExtension(pi: ExtensionAPI): void {
       ttftHistory.push(Math.max(now - ttftBase, 0));
       while (ttftHistory.length > TTFT_SAMPLES) ttftHistory.shift();
       samples.push({ t: now, tokens: 0 }); // 基线:首个 token 到达时刻
+      show(ctx, `⚡ --${ttftSuffix(ctx)}${longSuffix(ctx, now)}`); // TTFT 已可用,无需等待速度样本
     }
     lastTokenAt = now;
     estimated += estimateTokens(e.delta);
